@@ -17,24 +17,32 @@
 package org.apache.rocketmq.common;
 
 public class MQVersion {
-
+    /**Enum.ordinal()返回枚举对象在枚举类中的序号**/
     public static final int CURRENT_VERSION = Version.V4_5_1.ordinal();
 
+    /**
+     * 根据某一个序号查询枚举类中对应的枚举对象的name属性
+     * @param value
+     * @return
+     */
     public static String getVersionDesc(int value) {
         int length = Version.values().length;
         if (value >= length) {
             return Version.values()[length - 1].name();
         }
-
         return Version.values()[value].name();
     }
 
+    /**
+     * 根据某一个序号查询枚举类中对应的枚举对象
+     * @param value
+     * @return
+     */
     public static Version value2Version(int value) {
         int length = Version.values().length;
         if (value >= length) {
             return Version.values()[length - 1];
         }
-
         return Version.values()[value];
     }
 

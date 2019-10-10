@@ -320,6 +320,11 @@ public class MixAll {
         return properties;
     }
 
+    /**
+     * 把Properties实体中的数据转化设置为某个类的属性
+     * @param p
+     * @param object
+     */
     public static void properties2Object(final Properties p, final Object object) {
         Method[] methods = object.getClass().getMethods();
         for (Method method : methods) {

@@ -27,19 +27,32 @@ import org.apache.commons.cli.ParseException;
 public class ServerUtil {
 
     public static Options buildCommandlineOptions(final Options options) {
+        /**
+         * 命令行h代表帮助信息，非必填
+         */
         Option opt = new Option("h", "help", false, "Print help");
         opt.setRequired(false);
         options.addOption(opt);
-
+        /**
+         * 命令行n代表nameserver address地址，必填，描述信息 示例：192.168.0.1:9876;192.168.0.2:9876
+         */
         opt =
             new Option("n", "namesrvAddr", true,
                 "Name server address list, eg: 192.168.0.1:9876;192.168.0.2:9876");
         opt.setRequired(false);
         options.addOption(opt);
-
+        /**以上两个命令行参数非必填**/
         return options;
     }
 
+    /**
+     * 解析命令行，如果包含命令行-h,返回null
+     * @param appName
+     * @param args
+     * @param options
+     * @param parser
+     * @return
+     */
     public static CommandLine parseCmdLine(final String appName, String[] args, Options options,
         CommandLineParser parser) {
         HelpFormatter hf = new HelpFormatter();
@@ -52,9 +65,9 @@ public class ServerUtil {
                 return null;
             }
         } catch (ParseException e) {
+            e.printStackTrace();
             hf.printHelp(appName, options, true);
         }
-
         return commandLine;
     }
 
@@ -64,6 +77,11 @@ public class ServerUtil {
         hf.printHelp(appName, options, true);
     }
 
+    /**
+     * 把命令行配置设置到Properties实体中
+     * @param commandLine
+     * @return
+     */
     public static Properties commandLine2Properties(final CommandLine commandLine) {
         Properties properties = new Properties();
         Option[] opts = commandLine.getOptions();
@@ -77,7 +95,6 @@ public class ServerUtil {
                 }
             }
         }
-
         return properties;
     }
 

@@ -41,22 +41,15 @@ import org.apache.rocketmq.srvutil.FileWatchService;
 
 public class NamesrvController {
     private static final InternalLogger log = InternalLoggerFactory.getLogger(LoggerName.NAMESRV_LOGGER_NAME);
-
     private final NamesrvConfig namesrvConfig;
-
     private final NettyServerConfig nettyServerConfig;
-
     private final ScheduledExecutorService scheduledExecutorService = Executors.newSingleThreadScheduledExecutor(new ThreadFactoryImpl(
         "NSScheduledThread"));
     private final KVConfigManager kvConfigManager;
     private final RouteInfoManager routeInfoManager;
-
     private RemotingServer remotingServer;
-
     private BrokerHousekeepingService brokerHousekeepingService;
-
     private ExecutorService remotingExecutor;
-
     private Configuration configuration;
     private FileWatchService fileWatchService;
 
@@ -74,16 +67,11 @@ public class NamesrvController {
     }
 
     public boolean initialize() {
-
         this.kvConfigManager.load();
-
         this.remotingServer = new NettyRemotingServer(this.nettyServerConfig, this.brokerHousekeepingService);
-
         this.remotingExecutor =
             Executors.newFixedThreadPool(nettyServerConfig.getServerWorkerThreads(), new ThreadFactoryImpl("RemotingExecutorThread_"));
-
         this.registerProcessor();
-
         this.scheduledExecutorService.scheduleAtFixedRate(new Runnable() {
 
             @Override

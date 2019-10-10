@@ -97,10 +97,8 @@ public class Configuration {
         if (extProperties == null) {
             return this;
         }
-
         try {
             readWriteLock.writeLock().lockInterruptibly();
-
             try {
                 merge(extProperties, this.allConfigs);
             } finally {
@@ -109,7 +107,6 @@ public class Configuration {
         } catch (InterruptedException e) {
             log.error("register lock error. {}" + extProperties);
         }
-
         return this;
     }
 

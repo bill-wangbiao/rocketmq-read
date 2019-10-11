@@ -66,18 +66,23 @@ public class DefaultRequestProcessor implements NettyRequestProcessor {
         this.namesrvController = namesrvController;
     }
 
+    /**
+     * 处理Producer、Consumer、Broker与Nameserver的交互
+     * @param ctx
+     * @param request
+     * @return
+     * @throws RemotingCommandException
+     */
     @Override
     public RemotingCommand processRequest(ChannelHandlerContext ctx,
         RemotingCommand request) throws RemotingCommandException {
-
         if (ctx != null) {
             log.debug("receive request, {} {} {}",
                 request.getCode(),
                 RemotingHelper.parseChannelRemoteAddr(ctx.channel()),
                 request);
         }
-
-
+        /**Producer，Broker与Nameserver的交互内容有如下：**/
         switch (request.getCode()) {
             case RequestCode.PUT_KV_CONFIG:
                 return this.putKVConfig(ctx, request);
@@ -138,13 +143,11 @@ public class DefaultRequestProcessor implements NettyRequestProcessor {
         final RemotingCommand response = RemotingCommand.createResponseCommand(null);
         final PutKVConfigRequestHeader requestHeader =
             (PutKVConfigRequestHeader) request.decodeCommandCustomHeader(PutKVConfigRequestHeader.class);
-
         this.namesrvController.getKvConfigManager().putKVConfig(
             requestHeader.getNamespace(),
             requestHeader.getKey(),
             requestHeader.getValue()
         );
-
         response.setCode(ResponseCode.SUCCESS);
         response.setRemark(null);
         return response;

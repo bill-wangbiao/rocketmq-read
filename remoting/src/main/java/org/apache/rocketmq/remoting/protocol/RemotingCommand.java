@@ -128,7 +128,6 @@ public class RemotingCommand {
                 return null;
             }
         }
-
         return cmd;
     }
 

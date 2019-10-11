@@ -86,41 +86,46 @@ public class NettyRemotingServer extends NettyRemotingAbstract implements Remoti
         this(nettyServerConfig, null);
     }
 
-    public NettyRemotingServer(final NettyServerConfig nettyServerConfig,
-        final ChannelEventListener channelEventListener) {
+    /**
+     * 新建NettyRemotingServer
+     * @param nettyServerConfig
+     * @param channelEventListener
+     */
+    public NettyRemotingServer(final NettyServerConfig nettyServerConfig, final ChannelEventListener channelEventListener) {
+        /**设置单向发送，异步发送信号量**/
         super(nettyServerConfig.getServerOnewaySemaphoreValue(), nettyServerConfig.getServerAsyncSemaphoreValue());
+        /**初始化Netty启动类ServerBootstrap**/
         this.serverBootstrap = new ServerBootstrap();
         this.nettyServerConfig = nettyServerConfig;
         this.channelEventListener = channelEventListener;
 
+        /**使用NettyServerConfig.serverCallbackExecutorThreads创建公用线程池，名称以NettyServerPublicExecutor_开头**/
         int publicThreadNums = nettyServerConfig.getServerCallbackExecutorThreads();
         if (publicThreadNums <= 0) {
             publicThreadNums = 4;
         }
-
+        /**publicExecutor会在注册特定业务Netty事件处理器时用到，特定业务指发送消息，查询消息等业务**/
         this.publicExecutor = Executors.newFixedThreadPool(publicThreadNums, new ThreadFactory() {
             private AtomicInteger threadIndex = new AtomicInteger(0);
-
             @Override
             public Thread newThread(Runnable r) {
                 return new Thread(r, "NettyServerPublicExecutor_" + this.threadIndex.incrementAndGet());
             }
         });
 
+        /**初始化EventLoopGroup**/
         if (useEpoll()) {
+            //boss线程池
             this.eventLoopGroupBoss = new EpollEventLoopGroup(1, new ThreadFactory() {
                 private AtomicInteger threadIndex = new AtomicInteger(0);
-
                 @Override
                 public Thread newThread(Runnable r) {
                     return new Thread(r, String.format("NettyEPOLLBoss_%d", this.threadIndex.incrementAndGet()));
                 }
             });
-
             this.eventLoopGroupSelector = new EpollEventLoopGroup(nettyServerConfig.getServerSelectorThreads(), new ThreadFactory() {
                 private AtomicInteger threadIndex = new AtomicInteger(0);
                 private int threadTotal = nettyServerConfig.getServerSelectorThreads();
-
                 @Override
                 public Thread newThread(Runnable r) {
                     return new Thread(r, String.format("NettyServerEPOLLSelector_%d_%d", threadTotal, this.threadIndex.incrementAndGet()));
@@ -129,31 +134,27 @@ public class NettyRemotingServer extends NettyRemotingAbstract implements Remoti
         } else {
             this.eventLoopGroupBoss = new NioEventLoopGroup(1, new ThreadFactory() {
                 private AtomicInteger threadIndex = new AtomicInteger(0);
-
                 @Override
                 public Thread newThread(Runnable r) {
                     return new Thread(r, String.format("NettyNIOBoss_%d", this.threadIndex.incrementAndGet()));
                 }
             });
-
             this.eventLoopGroupSelector = new NioEventLoopGroup(nettyServerConfig.getServerSelectorThreads(), new ThreadFactory() {
                 private AtomicInteger threadIndex = new AtomicInteger(0);
                 private int threadTotal = nettyServerConfig.getServerSelectorThreads();
-
                 @Override
                 public Thread newThread(Runnable r) {
                     return new Thread(r, String.format("NettyServerNIOSelector_%d_%d", threadTotal, this.threadIndex.incrementAndGet()));
                 }
             });
         }
-
+        /**加载ssl上下文**/
         loadSslContext();
     }
 
     public void loadSslContext() {
         TlsMode tlsMode = TlsSystemConfig.tlsMode;
         log.info("Server is running in TLS {} mode", tlsMode.getName());
-
         if (tlsMode != TlsMode.DISABLED) {
             try {
                 sslContext = TlsHelper.buildSslContext(false);
@@ -166,12 +167,19 @@ public class NettyRemotingServer extends NettyRemotingAbstract implements Remoti
         }
     }
 
+    /**
+     * 是否是linux平台，是否启用Epoll IO模型，epoll可用
+     * @return
+     */
     private boolean useEpoll() {
         return RemotingUtil.isLinuxPlatform()
             && nettyServerConfig.isUseEpollNativeSelector()
             && Epoll.isAvailable();
     }
 
+    /**
+     * 启动netty
+     */
     @Override
     public void start() {
         this.defaultEventExecutorGroup = new DefaultEventExecutorGroup(
@@ -229,7 +237,6 @@ public class NettyRemotingServer extends NettyRemotingAbstract implements Remoti
         }
 
         this.timer.scheduleAtFixedRate(new TimerTask() {
-
             @Override
             public void run() {
                 try {

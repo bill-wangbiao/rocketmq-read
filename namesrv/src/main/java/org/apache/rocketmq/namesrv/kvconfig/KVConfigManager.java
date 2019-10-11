@@ -41,6 +41,9 @@ public class KVConfigManager {
         this.namesrvController = namesrvController;
     }
 
+    /**
+     * 读取kvConfigPath数据，并把数据进行内存存储（采用线程不安全的HashMap容器存储，结合读写锁ReadWriteLock）
+     */
     public void load() {
         String content = null;
         try {
@@ -68,7 +71,6 @@ public class KVConfigManager {
                     this.configTable.put(namespace, kvTable);
                     log.info("putKVConfig create new Namespace {}", namespace);
                 }
-
                 final String prev = kvTable.put(key, value);
                 if (null != prev) {
                     log.info("putKVConfig update config item, Namespace: {} Key: {} Value: {}",
@@ -83,7 +85,6 @@ public class KVConfigManager {
         } catch (InterruptedException e) {
             log.error("putKVConfig InterruptedException", e);
         }
-
         this.persist();
     }
 

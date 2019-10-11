@@ -67,29 +67,34 @@ public class NamesrvController {
     }
 
     public boolean initialize() {
+        /**读取加载kv配置**/
         this.kvConfigManager.load();
+        /**初始化NettyRemotingServer**/
         this.remotingServer = new NettyRemotingServer(this.nettyServerConfig, this.brokerHousekeepingService);
+        /**使用NettyServerConfig.serverWorkerThreads创建固定大小的线程池，线程名以RemotingExecutorThread_开头**/
         this.remotingExecutor =
             Executors.newFixedThreadPool(nettyServerConfig.getServerWorkerThreads(), new ThreadFactoryImpl("RemotingExecutorThread_"));
+        /**将DefaultRequestProcessor与RemotingExecutor做绑定，即使用remotingExecutor做netty事件处理线程池**/
         this.registerProcessor();
+        /**开启一个定时器，每隔10秒扫描无效的broker，并清除相关路由配置信息**/
         this.scheduledExecutorService.scheduleAtFixedRate(new Runnable() {
-
             @Override
             public void run() {
                 NamesrvController.this.routeInfoManager.scanNotActiveBroker();
             }
         }, 5, 10, TimeUnit.SECONDS);
 
+        /**开启一个定时器，每隔10秒定时输出config信息**/
         this.scheduledExecutorService.scheduleAtFixedRate(new Runnable() {
-
             @Override
             public void run() {
                 NamesrvController.this.kvConfigManager.printAllPeriodically();
             }
         }, 1, 10, TimeUnit.MINUTES);
 
+        //初始化fileWatchService
         if (TlsSystemConfig.tlsMode != TlsMode.DISABLED) {
-            // Register a listener to reload SslContext
+            /**注册一个监听器以重新加载SslContext**/
             try {
                 fileWatchService = new FileWatchService(
                     new String[] {
@@ -125,25 +130,28 @@ public class NamesrvController {
                 log.warn("FileWatchService created error, can't load the certificate dynamically");
             }
         }
-
         return true;
     }
 
+    /**
+     * 注册默认事件处理器
+     * 那么什么是默认事件呢？就是Producer，Broker与NameServer的交互事件，如Broker注册，Topic删除等事件，处理默认事件的代码逻辑在DefaultRequestProcessor中
+     */
     private void registerProcessor() {
         if (namesrvConfig.isClusterTest()) {
-
             this.remotingServer.registerDefaultProcessor(new ClusterTestRequestProcessor(this, namesrvConfig.getProductEnvName()),
                 this.remotingExecutor);
         } else {
-
+            /**将DefaultRequestProcessor和remotingExecutor绑定，使用remotingExecutor做netty默认事件处理线程池**/
             this.remotingServer.registerDefaultProcessor(new DefaultRequestProcessor(this), this.remotingExecutor);
         }
     }
 
     public void start() throws Exception {
+        /**启动NettyServer**/
         this.remotingServer.start();
-
         if (this.fileWatchService != null) {
+            /**启动重新加载SslContext监听器线程**/
             this.fileWatchService.start();
         }
     }
